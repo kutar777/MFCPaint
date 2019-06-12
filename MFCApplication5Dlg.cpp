@@ -32,6 +32,9 @@ BEGIN_MESSAGE_MAP(CMFCApplication5Dlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_RBUTTONUP()
 	ON_COMMAND(20000, OnMyCommand)
+	ON_WM_LBUTTONDOWN()
+	ON_BN_CLICKED(IDC_SELECT_COL_BTN, &CMFCApplication5Dlg::OnBnClickedSelectColBtn)
+	ON_WM_DRAWITEM()
 END_MESSAGE_MAP()
 
 
@@ -59,8 +62,8 @@ void CMFCApplication5Dlg::OnPaint()
 {
 	if (IsIconic())
 	{
-		CPaintDC dc(this); // device context for painting
 
+		CPaintDC dc(this); // device context for painting
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
 		// Center icon in client rectangle
@@ -76,6 +79,7 @@ void CMFCApplication5Dlg::OnPaint()
 	}
 	else
 	{
+	
 		CDialogEx::OnPaint();
 	}
 }
@@ -131,4 +135,73 @@ void CMFCApplication5Dlg::OnMyCommand()
 {
 	AfxMessageBox(L"First MENU");
 
+}
+
+void CMFCApplication5Dlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	/*CRect r(10, 10, 100, 100);
+	if (r.PtInRect(point))
+	{
+		CColorDialog ins_dlg;
+		ins_dlg.m_cc.Flags |= CC_FULLOPEN | CC_RGBINIT;
+		ins_dlg.m_cc.rgbResult = m_user_color;
+
+		if (IDOK == ins_dlg.DoModal())
+		{
+			m_user_color = ins_dlg.GetColor();
+			InvalidateRect(r);
+		}
+	}
+*/
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+
+void CMFCApplication5Dlg::OnBnClickedSelectColBtn()
+{
+	CColorDialog ins_dlg;
+	ins_dlg.m_cc.Flags |= CC_FULLOPEN | CC_RGBINIT;
+	ins_dlg.m_cc.rgbResult = m_user_color;
+
+	if (IDOK == ins_dlg.DoModal())
+	{
+		m_user_color = ins_dlg.GetColor();
+		GetDlgItem(IDC_SELECT_COL_BTN)->Invalidate();
+		CRect r(10, 10, 110, 110);
+		//InvalidateRect(r);
+	}
+}
+
+
+void CMFCApplication5Dlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpds)
+{
+	if (nIDCtl == IDC_SELECT_COL_BTN)
+	{
+		CDC *p_dc = CDC::FromHandle(lpds->hDC);
+		p_dc->FillSolidRect(&lpds->rcItem, RGB(228, 228, 228));
+		CString str;
+		GetDlgItemText(IDC_SELECT_COL_BTN, str);
+
+		CRect r(lpds->rcItem);
+		CRect color_rect(lpds->rcItem.left + 3, lpds->rcItem.top + 3, lpds->rcItem.right -3, lpds->rcItem.bottom - 3);
+		if (lpds->itemState & ODS_SELECTED)
+		{
+			r -= CPoint(1, 1);
+			color_rect -= CPoint(1, 1);
+			p_dc->Draw3dRect(r, RGB(210, 210, 210), RGB(238, 238, 238));
+			//p_dc->FillSolidRect(&lpds->rcItem, RGB(245, 245, 245));
+		}
+		else
+		{
+			p_dc->Draw3dRect(&lpds->rcItem, RGB(248, 248, 248), RGB(168, 168, 168));
+		}
+
+		p_dc->SetBkMode(TRANSPARENT);
+		p_dc->SetTextColor(m_user_color);
+		p_dc->DrawText(str, color_rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+		p_dc->Draw3dRect(color_rect, m_user_color, m_user_color);
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpds);
 }
