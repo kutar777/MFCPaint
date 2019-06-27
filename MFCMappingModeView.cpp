@@ -55,17 +55,19 @@ void CMFCMappingModeView::OnDraw(CDC* pDC)
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
 		return;
-	
-	for (int i = 0; i <= 1000 / 100; i++)
+
+	for (int i = 0; i <= 2000 / 100; i++)
 	{
-		pDC->MoveTo(0, 100 * i);
-		pDC->LineTo(1000, 100 * i);
+		m_mem_dc.MoveTo(0, 100 * i);
+		m_mem_dc.LineTo(2000, 100 * i);
 	}
-	for (int i = 0; i <= 1000 / 100; i++)
+	for (int i = 0; i <= 2000 / 100; i++)
 	{
-		pDC->MoveTo(100 * i, 0);
-		pDC->LineTo(100 * i, 1000);
+		m_mem_dc.MoveTo(100 * i, 0);
+		m_mem_dc.LineTo(100 * i, 2000);
 	}
+
+	pDC->BitBlt(-1000, -1000, 2000, 2000, &m_mem_dc, 0, 0, SRCCOPY);
 }
 
 void CMFCMappingModeView::OnInitialUpdate()
@@ -73,8 +75,18 @@ void CMFCMappingModeView::OnInitialUpdate()
 	CScrollView::OnInitialUpdate();
 
 	CSize sizeTotal;
-	sizeTotal.cx = sizeTotal.cy = 1000;
+	sizeTotal.cx = sizeTotal.cy = 2000;
 	SetScrollSizes(MM_TEXT, sizeTotal);
+
+	//CPoint size_scroll;
+	//size_scroll.x = GetScrollLimit(SB_HORZ);
+	//size_scroll.y = GetScrollLimit(SB_VERT);
+	//ScrollToDevicePosition(size_scroll);
+	CClientDC dc(this);
+	m_mem_dc.CreateCompatibleDC(&dc);
+	m_bmp.CreateCompatibleBitmap(&dc, 2000, 2000);
+	m_mem_dc.SelectObject(&m_bmp);
+	m_mem_dc.FillSolidRect(0, 0, 2000, 2000, RGB(255, 255, 255));
 }
 
 
@@ -110,11 +122,9 @@ void CMFCMappingModeView::OnPrepareDC(CDC* pDC, CPrintInfo* pInfo)
 	pDC->SetWindowExt(1000, -1000);
 	pDC->SetWindowOrg(0, 0);
 	pDC->SetViewportExt(zoom_x, zoom_y);
-	//CPoint pos = GetScrollPosition();
-	CRect r;
-	GetClientRect(&r);
+	CPoint pos = GetScrollPosition();
 
-	pDC->SetViewportOrg(r.Width() / 2, r.Height() / 2);
+	pDC->SetViewportOrg(1000 - pos.x, 1000 - pos.y);
 	CSize size = pDC->GetWindowExt();
 
 }
@@ -150,11 +160,11 @@ void CMFCMappingModeView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 void CMFCMappingModeView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	CClientDC dc(this);
-	CPoint new_pos;
-	new_pos.x = ((point.x + 50) / 100) * 100;
-	new_pos.y = ((point.y + 50) / 100) * 100;
-	dc.Ellipse(new_pos.x - 50, new_pos.y - 50, new_pos.x + 50, new_pos.y + 50);
+	
+	//CPoint new_pos;
+	//new_pos.x = ((point.x + 50) / 100) * 100;
+	//new_pos.y = ((point.y + 50) / 100) * 100;
+	//dc.Ellipse(new_pos.x - 50, new_pos.y - 50, new_pos.x + 50, new_pos.y + 50);
 
 	
 	
@@ -164,7 +174,24 @@ void CMFCMappingModeView::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CMFCMappingModeView::OnMouseMove(UINT nFlags, CPoint point)
 {
-	// TODO: Add your message handler code here and/or call default
+	if (nFlags & MK_LBUTTON)
+	{
+		
+		CClientDC dc(this);
+		OnPrepareDC(&dc);
+		dc.DPtoLP(&point);
+
+		CPoint pos_mem(point.x + 1000, point.y + 1000);
+
+		CPoint new_pos;
+		new_pos.x = ((pos_mem.x + 50) / 100) * 100;
+		new_pos.y = ((pos_mem.y + 50) / 100) * 100;
+		//dc.Ellipse(new_pos.x - 50, new_pos.y - 50, new_pos.x + 50, new_pos.y + 50);
+
+		m_mem_dc.Ellipse(new_pos.x - 10, new_pos.y - 10, new_pos.x + 10, new_pos.y + 10);
+		
+		dc.BitBlt(-1000, -1000, 2000, 2000, &m_mem_dc, 0, 0, SRCCOPY);
+	}
 
 	CScrollView::OnMouseMove(nFlags, point);
 }
